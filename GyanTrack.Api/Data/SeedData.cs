@@ -8,15 +8,28 @@ namespace GyanTrack.Api.Data
     {
         public static async Task SeedDummyDataAsync(GyanTrackDbContext context)
         {
-            // Check if data already exists
-            if (context.Users.Any())
-                return;
+            // For testing: Clear existing data and re-seed
+            // Delete all existing data in correct order (respecting foreign keys)
+            context.Answers.RemoveRange(context.Answers);
+            context.TestAttempts.RemoveRange(context.TestAttempts);
+            context.Questions.RemoveRange(context.Questions);
+            context.Options.RemoveRange(context.Options);
+            context.Tests.RemoveRange(context.Tests);
+            context.PerformanceScores.RemoveRange(context.PerformanceScores);
+            context.EvaluatorInterns.RemoveRange(context.EvaluatorInterns);
+            context.AssignmentTemplates.RemoveRange(context.AssignmentTemplates);
+            context.Subjects.RemoveRange(context.Subjects);
+            context.Interns.RemoveRange(context.Interns);
+            context.Evaluators.RemoveRange(context.Evaluators);
+            context.Admins.RemoveRange(context.Admins);
+            context.Users.RemoveRange(context.Users);
+            await context.SaveChangesAsync();
 
-            // Create Users
+            // Create Users with BCrypt hashed passwords
             var adminUser = new User
             {
                 Email = "admin@gyantrack.com",
-                PasswordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("admin123")),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                 Role = UserRole.Admin
             };
             context.Users.Add(adminUser);
@@ -24,7 +37,7 @@ namespace GyanTrack.Api.Data
             var evaluatorUser = new User
             {
                 Email = "evaluator@gyantrack.com",
-                PasswordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("evaluator123")),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("evaluator123"),
                 Role = UserRole.Evaluator
             };
             context.Users.Add(evaluatorUser);
@@ -32,7 +45,7 @@ namespace GyanTrack.Api.Data
             var evaluatorUser2 = new User
             {
                 Email = "evaluator2@gyantrack.com",
-                PasswordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("evaluator123")),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("evaluator123"),
                 Role = UserRole.Evaluator
             };
             context.Users.Add(evaluatorUser2);
@@ -40,7 +53,7 @@ namespace GyanTrack.Api.Data
             var internUser = new User
             {
                 Email = "intern@gyantrack.com",
-                PasswordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("intern123")),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("intern123"),
                 Role = UserRole.Intern
             };
             context.Users.Add(internUser);
@@ -48,7 +61,7 @@ namespace GyanTrack.Api.Data
             var internUser2 = new User
             {
                 Email = "intern2@gyantrack.com",
-                PasswordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("intern123")),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("intern123"),
                 Role = UserRole.Intern
             };
             context.Users.Add(internUser2);
@@ -56,7 +69,7 @@ namespace GyanTrack.Api.Data
             var internUser3 = new User
             {
                 Email = "intern3@gyantrack.com",
-                PasswordHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("intern123")),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("intern123"),
                 Role = UserRole.Intern
             };
             context.Users.Add(internUser3);
