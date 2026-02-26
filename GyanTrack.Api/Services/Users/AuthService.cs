@@ -33,9 +33,8 @@ namespace GyanTrack.Api.Services.Users
                 return null;
             }
 
-            // Verify password (simple comparison - in production use proper hashing)
-            var passwordHash = Convert.ToBase64String(Encoding.UTF8.GetBytes(password));
-            if (user.PasswordHash != passwordHash)
+            // Verify password using BCrypt
+            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
                 return null;
             }
@@ -89,11 +88,11 @@ namespace GyanTrack.Api.Services.Users
                 throw new Exception("Invalid role. Must be Admin, Evaluator, or Intern");
             }
 
-            // Create user
+            // Create user with BCrypt hashed password
             var user = new User
             {
                 Email = email,
-                PasswordHash = Convert.ToBase64String(Encoding.UTF8.GetBytes(password)),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 Role = userRole
             };
 
