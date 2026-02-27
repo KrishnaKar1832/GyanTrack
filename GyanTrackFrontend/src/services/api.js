@@ -20,20 +20,29 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle 401s
+// Response interceptor — log all errors visibly
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Clear local storage and redirect to login if unauthorized
-      localStorage.removeItem("user");
-      // Optional: you can dispatch a custom event here to trigger a logout in React
-      // window.dispatchEvent(new Event('unauthorized'));
+    if (!error.response) {
+      // Network error — backend is probably down
+      console.error(
+        `🔴 API Network Error: Cannot reach backend at ${error.config?.url}. Is the backend running on port 5034?`,
+        error.message
+      );
+    } else {
+      const { status, data } = error.response;
+      console.error(
+        `🔴 API Error [${status}] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`,
+        data?.message || data || error.message
+      );
+      if (status === 401) {
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
