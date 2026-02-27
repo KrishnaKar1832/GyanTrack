@@ -1,26 +1,31 @@
 import api from "./api";
 
-// Matches InternController.cs
+// Matches InternController.cs routes
 export const internService = {
-    // Tests
-    getAllTests: () => api.get("/intern/tests"),
+    // Live tests available to this intern
     getLiveTests: () => api.get("/intern/tests/live"),
-    getUpcomingTests: () => api.get("/intern/tests/upcoming"),
-    getPreviousTests: () => api.get("/intern/tests/previous"),
-    getTestById: (testId) => api.get(`/intern/tests/${testId}`),
-    getTestQuestions: (testId) => api.get(`/intern/tests/${testId}/questions`),
 
-    startTest: (testId) => api.post(`/intern/tests/${testId}/start`),
-    submitTest: (testId, data) => api.post(`/intern/tests/${testId}/submit`, data),
+    // All tests (live, upcoming, completed)
+    getAllTests: () => api.get("/intern/tests"),
 
-    // Results & Evaluations
-    getMyResults: () => api.get("/intern/results"),
-    getTestResult: (attemptId) => api.get(`/intern/results/${attemptId}`),
-    getTestResultByTestId: (testId) => api.get(`/intern/tests/${testId}/result`),
+    // Get a specific test with questions (for taking the test)
+    getTestWithQuestions: (testId) => api.get(`/intern/tests/${testId}/questions`),
 
-    getMyEvaluations: () => api.get("/intern/evaluations"),
-    getMyEvaluationByTemplate: (templateId) => api.get(`/intern/evaluations/${templateId}`),
+    // Start a test attempt: { testId, internId }
+    startAttempt: (data) => api.post("/intern/attempts/start", data),
 
-    // Profile
-    getMyProfile: () => api.get("/intern/profile")
+    // Submit a completed attempt: { attemptId, answers: [{questionId, selectedOptionId}] }
+    submitAttempt: (data) => api.post("/intern/attempts/submit", data),
+
+    // Get result for an attempt
+    getAttemptResult: (attemptId) => api.get(`/intern/attempts/${attemptId}/result`),
+
+    // Get all attempts for this intern
+    getMyAttempts: () => api.get("/intern/attempts"),
+
+    // Get this intern's profile (assigned evaluators, dept, batch)
+    getProfile: () => api.get("/intern/profile"),
+
+    // Get this intern's performance
+    getPerformance: () => api.get("/intern/performance"),
 };
