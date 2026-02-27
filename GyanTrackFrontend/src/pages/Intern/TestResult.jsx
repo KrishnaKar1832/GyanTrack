@@ -7,10 +7,10 @@ import {
   CardContent,
   Grid,
   Button,
-  Avatar,
-  Divider,
   Chip,
   LinearProgress,
+  CircularProgress,
+  Alert
 } from "@mui/material";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -19,26 +19,68 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { internService } from "../../services/internService";
 
 const TestResult = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Mock data for test result
-  const testData = {
-    title: "Object-Oriented Programming Assessment",
-    date: "2024-02-20",
-    timeTaken: "45 mins",
-    evaluator: "Dr. Smith",
-    score: 85,
-    totalMarks: 100,
-    totalQuestions: 50,
-    correctAnswers: 34,
-    incorrectAnswers: 6,
-    unattempted: 10,
-    status: "Excellent",
-    accuracy: 85,
-  };
+  const [testData, setTestData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    const fetchResult = async () => {
+      try {
+        const res = await internService.getAttemptResult(id);
+        const data = res.data;
+
+        // Map backend TestResultDTO to UI representation
+        setTestData({
+          title: data.testTitle || "Unknown Test",
+          subject: data.subjectName || "Unknown Subject",
+          date: new Date(data.startTime).toLocaleDateString(),
+          timeTaken: data.endTime
+            ? `${Math.round((new Date(data.endTime) - new Date(data.startTime)) / 60000)} mins`
+            : "Unknown",
+          score: data.obtainedScore || 0,
+          totalMarks: data.totalScore || 100,
+          totalQuestions: data.totalQuestions || 0,
+          correctAnswers: data.correctAnswers || 0,
+          incorrectAnswers: data.wrongAnswers || 0,
+          unattempted: (data.totalQuestions || 0) - (data.correctAnswers || 0) - (data.wrongAnswers || 0),
+          status: data.percentage >= 60 ? "Passed" : "Failed",
+          accuracy: data.percentage || 0,
+        });
+      } catch (err) {
+        console.error("Error fetching result:", err);
+        setErrorMsg(err.response?.data?.message || "Failed to load test result. It may not exist yet.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchResult();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <Box display="flex" justifyContent="center" mt={10}><CircularProgress /></Box>
+      </DashboardLayout>
+    );
+  }
+
+  if (errorMsg || !testData) {
+    return (
+      <DashboardLayout>
+        <Box maxWidth={600} mx="auto" mt={8}>
+          <Alert severity="error">{errorMsg}</Alert>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/intern')} sx={{ mt: 2 }}>Back to Dashboard</Button>
+        </Box>
+      </DashboardLayout>
+    );
+  }
 
   const pieData = [
     { name: "Correct", value: testData.correctAnswers, color: "#10b981" },
@@ -49,11 +91,11 @@ const TestResult = () => {
   return (
     <DashboardLayout>
       <Box sx={{ maxWidth: 1200, mx: "auto", animation: "fadeIn 0.5s ease-in-out" }}>
-        
+
         {/* Header Section */}
         <Box display="flex" alignItems="center" mb={4}>
-          <Button 
-            startIcon={<ArrowBackIcon />} 
+          <Button
+            startIcon={<ArrowBackIcon />}
             onClick={() => navigate('/intern')}
             sx={{ color: "#64748b", mr: 2 }}
           >
@@ -65,10 +107,10 @@ const TestResult = () => {
         </Box>
 
         {/* Top Banner Scorecard */}
-        <Card 
-          elevation={4} 
-          sx={{ 
-            borderRadius: 4, 
+        <Card
+          elevation={4}
+          sx={{
+            borderRadius: 4,
             background: "linear-gradient(135deg, #023047 0%, #219ebc 100%)",
             color: "white",
             mb: 4,
@@ -82,22 +124,22 @@ const TestResult = () => {
           <CardContent sx={{ p: { xs: 4, md: 6 }, position: "relative", zIndex: 1 }}>
             <Grid container spacing={4} alignItems="center">
               <Grid item xs={12} md={8}>
-                <Chip 
-                  label={testData.status} 
-                  sx={{ 
-                    backgroundColor: "rgba(255,255,255,0.2)", 
-                    color: "white", 
-                    fontWeight: 600, 
-                    mb: 2 
-                  }} 
+                <Chip
+                  label={testData.status}
+                  sx={{
+                    backgroundColor: testData.status === "Passed" ? "#10b981" : "#ef4444",
+                    color: "white",
+                    fontWeight: 600,
+                    mb: 2
+                  }}
                 />
                 <Typography variant="h3" fontWeight={800} mb={1}>
                   {testData.title}
                 </Typography>
                 <Typography variant="body1" sx={{ opacity: 0.9 }}>
-                  Evaluated by {testData.evaluator} on {testData.date}
+                  Subject: {testData.subject} • Completed on {testData.date}
                 </Typography>
-                
+
                 <Box display="flex" gap={4} mt={4}>
                   <Box>
                     <Typography variant="body2" sx={{ opacity: 0.8 }}>Time Taken</Typography>
@@ -112,7 +154,7 @@ const TestResult = () => {
                   </Box>
                 </Box>
               </Grid>
-              
+
               <Grid item xs={12} md={4} display="flex" justifyContent={{ xs: "flex-start", md: "flex-end" }}>
                 <Box textAlign="center">
                   <Typography variant="h1" fontWeight={800}>
@@ -129,7 +171,7 @@ const TestResult = () => {
 
         {/* Statistics Grid */}
         <Grid container spacing={4}>
-          
+
           {/* Left Column: Breakdown */}
           <Grid item xs={12} md={12} lg={7}>
             <Card elevation={2} sx={{ borderRadius: 4, height: "100%" }}>
@@ -143,9 +185,9 @@ const TestResult = () => {
                     <Typography fontWeight={600} color="#334155">Accuracy</Typography>
                     <Typography fontWeight={700} color="#3b82f6">{testData.accuracy}%</Typography>
                   </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={testData.accuracy} 
+                  <LinearProgress
+                    variant="determinate"
+                    value={testData.accuracy}
                     sx={{ height: 10, borderRadius: 5, backgroundColor: "#e2e8f0", "& .MuiLinearProgress-bar": { backgroundColor: "#3b82f6" } }}
                   />
                 </Box>
@@ -168,7 +210,7 @@ const TestResult = () => {
                   <Grid item xs={12} sm={12} md={4}>
                     <Card elevation={0} sx={{ p: { xs: 2, md: 3 }, backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 3, textAlign: "center", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                       <Box sx={{ width: 40, height: 40, borderRadius: '50%', border: '3px dashed #cbd5e1', mx: 'auto', mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                         <Typography color="#94a3b8" fontWeight="bold">-</Typography>
+                        <Typography color="#94a3b8" fontWeight="bold">-</Typography>
                       </Box>
                       <Typography variant="h4" fontWeight={800} color="#475569">{testData.unattempted}</Typography>
                       <Typography variant="body2" fontWeight={600} color="#64748b">Skipped</Typography>
@@ -186,7 +228,7 @@ const TestResult = () => {
                 <Typography variant="h6" fontWeight={700} color="#1e293b" mb={1}>
                   Attempt Analysis
                 </Typography>
-                
+
                 <Box sx={{ flex: 1, minHeight: 300, width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -203,7 +245,7 @@ const TestResult = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                         itemStyle={{ fontWeight: 600 }}
                       />
@@ -216,14 +258,6 @@ const TestResult = () => {
         </Grid>
 
       </Box>
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}
-      </style>
     </DashboardLayout>
   );
 };
