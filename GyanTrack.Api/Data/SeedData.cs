@@ -8,9 +8,22 @@ namespace GyanTrack.Api.Data
     {
         public static async Task SeedDummyDataAsync(GyanTrackDbContext context)
         {
-            // Check if data already exists
-            if (context.Users.Any())
-                return;
+            // For testing: Clear existing data and re-seed
+            // Delete all existing data in correct order (respecting foreign keys)
+            context.Answers.RemoveRange(context.Answers);
+            context.TestAttempts.RemoveRange(context.TestAttempts);
+            context.Questions.RemoveRange(context.Questions);
+            context.Options.RemoveRange(context.Options);
+            context.Tests.RemoveRange(context.Tests);
+            context.PerformanceScores.RemoveRange(context.PerformanceScores);
+            context.EvaluatorInterns.RemoveRange(context.EvaluatorInterns);
+            context.AssignmentTemplates.RemoveRange(context.AssignmentTemplates);
+            context.Subjects.RemoveRange(context.Subjects);
+            context.Interns.RemoveRange(context.Interns);
+            context.Evaluators.RemoveRange(context.Evaluators);
+            context.Admins.RemoveRange(context.Admins);
+            context.Users.RemoveRange(context.Users);
+            await context.SaveChangesAsync();
 
             // Create Users with BCrypt hashed passwords
             var adminUser = new User
