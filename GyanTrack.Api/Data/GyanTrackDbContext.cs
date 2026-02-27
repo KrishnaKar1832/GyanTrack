@@ -258,7 +258,7 @@ namespace GyanTrack.Api.Data
         public GyanTrackDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<GyanTrackDbContext>();
-optionsBuilder.UseSqlServer("Server=IN-CNNGR24;Database=GyanTrackDB;User Id=sa;Password=sa;Encrypt=True;TrustServerCertificate=True");
+optionsBuilder.UseSqlServer("Server=IN-CNNGR24;Database=GyanTrackDB;User Id=sa;Password=sa;TrustServerCertificate=True");
             
             return new GyanTrackDbContext(optionsBuilder.Options);
         }
