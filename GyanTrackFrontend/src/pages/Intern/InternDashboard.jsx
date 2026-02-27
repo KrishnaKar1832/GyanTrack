@@ -1,3 +1,4 @@
+import { useState, useEffect, useContext } from "react";
 import {
   Box,
   Card,
@@ -17,9 +18,37 @@ import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
+import { internService } from "../../services/internService";
+import { AuthContext } from "../../context/AuthContext";
 
 const InternDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+
+  const [upcomingTests, setUpcomingTests] = useState([]);
+  const [liveTests, setLiveTests] = useState([]);
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [upcomingRes, liveRes, resultsRes] = await Promise.all([
+          internService.getUpcomingTests(),
+          internService.getLiveTests(),
+          internService.getMyResults()
+        ]);
+        setUpcomingTests(upcomingRes.data);
+        setLiveTests(liveRes.data);
+        setResults(resultsRes.data);
+      } catch (err) {
+        console.error("Error fetching intern dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -42,8 +71,8 @@ const InternDashboard = () => {
           }}
         >
           {/* Profile */}
-          <Card 
-            sx={{ cursor: 'pointer', '&:hover': { boxShadow: 6 } }} 
+          <Card
+            sx={{ cursor: 'pointer', '&:hover': { boxShadow: 6 } }}
             onClick={() => navigate('/intern/profile')}
           >
             <CardContent>
@@ -65,10 +94,10 @@ const InternDashboard = () => {
 
                 <Box ml={2}>
                   <Typography fontWeight={600}>
-                    Harish Mahto
+                    {user?.fullName || "Intern Name"}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    INT-2026-1547
+                    {user?.email || "intern@example.com"}
                   </Typography>
                 </Box>
               </Box>
@@ -84,28 +113,36 @@ const InternDashboard = () => {
             }}
           >
             <CardContent>
-              <Typography fontWeight={600}>
-                Live Test Available
-              </Typography>
+              {liveTests.length > 0 ? (
+                <>
+                  <Typography fontWeight={600}>
+                    Live Test Available
+                  </Typography>
 
-              <Typography variant="body2" mt={1}>
-                React Assessment
-              </Typography>
+                  <Typography variant="body2" mt={1}>
+                    {liveTests[0].title || `Test #${liveTests[0].testId}`}
+                  </Typography>
 
-              <Button
-                fullWidth
-                startIcon={<PlayArrowIcon />}
-                onClick={() => navigate('/intern/test/1')}
-                sx={{
-                  mt: 2,
-                  backgroundColor: "white",
-                  color: "#2563eb",
-                  fontWeight: 600,
-                  "&:hover": { backgroundColor: "#f8fafc" }
-                }}
-              >
-                Start
-              </Button>
+                  <Button
+                    fullWidth
+                    startIcon={<PlayArrowIcon />}
+                    onClick={() => navigate(`/intern/test/${liveTests[0].testId}`)}
+                    sx={{
+                      mt: 2,
+                      backgroundColor: "white",
+                      color: "#2563eb",
+                      fontWeight: 600,
+                      "&:hover": { backgroundColor: "#f8fafc" }
+                    }}
+                  >
+                    Start
+                  </Button>
+                </>
+              ) : (
+                <Typography fontWeight={600}>
+                  No Live Tests Available
+                </Typography>
+              )}
             </CardContent>
           </Card>
 
@@ -116,34 +153,15 @@ const InternDashboard = () => {
                 Upcoming Assessments
               </Typography>
 
-              {[
-                { 
-                  name: ".NET Test", 
-                  subject: ".NET", 
-                  marks: 50, 
-                  evaluator: "Akanshaya", 
-                  date: "2026-02-28", 
-                  time: "10:00 AM" 
-                },
-                { 
-                  name: "React Test", 
-                  subject: "React", 
-                  marks: 100, 
-                  evaluator: "Arpitam", 
-                  date: "2026-03-05", 
-                  time: "02:00 PM" 
-                },
-                { 
-                  name: "SQL Test", 
-                  subject: "SQL", 
-                  marks: 75, 
-                  evaluator: "Rohit", 
-                  date: "2026-03-10", 
-                  time: "11:30 AM" 
-                },
-              ].map((test, index) => (
-                <Accordion 
-                  key={index} 
+              {upcomingTests.length === 0 && !loading && (
+                <Typography variant="body2" color="text.secondary">
+                  No upcoming tests scheduled.
+                </Typography>
+              )}
+
+              {upcomingTests.map((test, index) => (
+                <Accordion
+                  key={index}
                   elevation={0}
                   disableGutters
                   sx={{
@@ -165,36 +183,32 @@ const InternDashboard = () => {
                     }}
                   >
                     <Typography fontWeight={600} color="#334155" fontSize="0.95rem">
-                      {test.name}
+                      {test.title || `Test #${test.testId}`}
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails sx={{ pt: 2, pb: 2 }}>
                     <Grid container columnSpacing={2} rowSpacing={1.5}>
                       <Grid item xs={6}>
-                        <Typography variant="caption" color="text.secondary" display="block">Subject</Typography>
-                        <Typography variant="body2" fontWeight={500} color="#0f172a">{test.subject}</Typography>
-                      </Grid>
-                      <Grid item xs={6}>
                         <Typography variant="caption" color="text.secondary" display="block">Evaluator</Typography>
-                        <Typography variant="body2" fontWeight={500} color="#0f172a">{test.evaluator}</Typography>
+                        <Typography variant="body2" fontWeight={500} color="#0f172a">{test.evaluatorName || "Assigned"}</Typography>
                       </Grid>
                       <Grid item xs={6}>
                         <Typography variant="caption" color="text.secondary" display="block">Date & Time</Typography>
-                        <Typography variant="body2" fontWeight={500} color="#0f172a">{test.date} at {test.time}</Typography>
+                        <Typography variant="body2" fontWeight={500} color="#0f172a">{new Date(test.startTime).toLocaleString()}</Typography>
                       </Grid>
                       <Grid item xs={6}>
                         <Typography variant="caption" color="text.secondary" display="block">Total Marks</Typography>
-                        <Typography variant="body2" fontWeight={500} color="#0f172a">{test.marks} Points</Typography>
+                        <Typography variant="body2" fontWeight={500} color="#0f172a">{test.totalMarks} Points</Typography>
                       </Grid>
                     </Grid>
-                    
+
                     <Box mt={2.5}>
-                      <Button 
-                        variant="outlined" 
-                        fullWidth 
+                      <Button
+                        variant="outlined"
+                        fullWidth
                         startIcon={<NotificationsActiveIcon />}
-                        sx={{ 
-                          borderRadius: 2, 
+                        sx={{
+                          borderRadius: 2,
                           color: "#2563eb",
                           borderColor: "#bfdbfe",
                           fontWeight: 600,
@@ -221,15 +235,15 @@ const InternDashboard = () => {
           }}
         >
           {/* Performance Matrix */}
-          <Card 
+          <Card
             elevation={3}
-            sx={{ 
-              width: "100%", 
-              cursor: 'pointer', 
+            sx={{
+              width: "100%",
+              cursor: 'pointer',
               borderRadius: 4,
               border: "1px solid #e2e8f0",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
-              '&:hover': { transform: "translateY(-4px)", boxShadow: "0 12px 24px -10px rgba(0,0,0,0.15)" } 
+              '&:hover': { transform: "translateY(-4px)", boxShadow: "0 12px 24px -10px rgba(0,0,0,0.15)" }
             }}
             onClick={() => navigate('/intern/performance')}
           >
@@ -304,43 +318,25 @@ const InternDashboard = () => {
                 Recent Evaluation Reports
               </Typography>
 
-              {[
-                { 
-                  name: "Object-Oriented Programming", 
-                  date: "2026-02-20", 
-                  score: 85, 
-                  total: 100, 
-                  correct: 34, 
-                  incorrect: 6, 
-                  status: "Excellent" 
-                },
-                { 
-                  name: "Web Development Basics", 
-                  date: "2026-02-15", 
-                  score: 92, 
-                  total: 100, 
-                  correct: 46, 
-                  incorrect: 4, 
-                  status: "Outstanding" 
-                },
-                { 
-                  name: "Operating Systems", 
-                  date: "2026-02-10", 
-                  score: 72, 
-                  total: 100, 
-                  correct: 36, 
-                  incorrect: 14, 
-                  status: "Good" 
-                },
-              ].map((test, index) => {
+              {results.length === 0 && !loading && (
+                <Typography variant="body2" color="text.secondary">
+                  No evaluation reports available yet.
+                </Typography>
+              )}
+
+              {results.map((result, index) => {
+                const isPassed = result.percentageScore >= 60;
+                const status = isPassed ? "Pass" : "Fail";
+                const total = result.totalMarks || 100;
+
                 const pieData = [
-                  { name: "Correct", value: test.correct, color: "#10b981" },
-                  { name: "Incorrect", value: test.incorrect, color: "#ef4444" },
+                  { name: "Score", value: result.score, color: "#10b981" },
+                  { name: "Remaining", value: total - result.score, color: "#ef4444" },
                 ];
-                
+
                 return (
-                  <Accordion 
-                    key={index} 
+                  <Accordion
+                    key={index}
                     elevation={0}
                     disableGutters
                     sx={{
@@ -362,16 +358,16 @@ const InternDashboard = () => {
                     >
                       <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" pr={2}>
                         <Typography fontWeight={600} color="#334155" fontSize="0.95rem">
-                          {test.name}
+                          Test #{result.testId} Attempt
                         </Typography>
-                        <Chip 
-                          label={`${test.score}%`} 
-                          size="small" 
-                          sx={{ 
-                            fontWeight: 700, 
-                            backgroundColor: test.score >= 90 ? "#dcfce7" : test.score >= 80 ? "#dbeafe" : "#fef3c7",
-                            color: test.score >= 90 ? "#166534" : test.score >= 80 ? "#1e40af" : "#92400e"
-                          }} 
+                        <Chip
+                          label={`${result.percentageScore || Math.round((result.score / total) * 100)}%`}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            backgroundColor: isPassed ? "#dcfce7" : "#fef3c7",
+                            color: isPassed ? "#166534" : "#92400e"
+                          }}
                         />
                       </Box>
                     </AccordionSummary>
@@ -381,15 +377,15 @@ const InternDashboard = () => {
                           <Box display="flex" flexDirection="column" gap={2}>
                             <Box display="flex" justifyContent="space-between" pb={1} borderBottom="1px dashed #cbd5e1">
                               <Typography variant="body2" color="text.secondary">Test Date</Typography>
-                              <Typography variant="body2" fontWeight={600} color="#334155">{test.date}</Typography>
+                              <Typography variant="body2" fontWeight={600} color="#334155">{new Date(result.submitTime || Date.now()).toLocaleDateString()}</Typography>
                             </Box>
                             <Box display="flex" justifyContent="space-between" pb={1} borderBottom="1px dashed #cbd5e1">
-                              <Typography variant="body2" color="text.secondary">Questions Attempted</Typography>
-                              <Typography variant="body2" fontWeight={600} color="#334155">{test.correct + test.incorrect} / 50</Typography>
+                              <Typography variant="body2" color="text.secondary">Score</Typography>
+                              <Typography variant="body2" fontWeight={600} color="#334155">{result.score} / {total}</Typography>
                             </Box>
                             <Box display="flex" justifyContent="space-between" pb={1} borderBottom="1px dashed #cbd5e1">
-                              <Typography variant="body2" color="text.secondary">Evaluator Remarks</Typography>
-                              <Typography variant="body2" fontWeight={600} color="#10b981">{test.status}</Typography>
+                              <Typography variant="body2" color="text.secondary">Status</Typography>
+                              <Typography variant="body2" fontWeight={600} color={isPassed ? "#10b981" : "#ef4444"}>{status}</Typography>
                             </Box>
                           </Box>
                         </Grid>
@@ -409,7 +405,7 @@ const InternDashboard = () => {
                                   <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                               </Pie>
-                              <RechartsTooltip 
+                              <RechartsTooltip
                                 contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                                 itemStyle={{ fontWeight: 600 }}
                               />
@@ -417,18 +413,18 @@ const InternDashboard = () => {
                           </ResponsiveContainer>
                         </Grid>
                       </Grid>
-                      
+
                       <Box mt={3}>
-                        <Button 
-                          variant="contained" 
-                          fullWidth 
+                        <Button
+                          variant="contained"
+                          fullWidth
                           disableElevation
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/intern/test-result/${index}`);
+                            navigate(`/intern/test-result/${result.id || index}`);
                           }}
-                          sx={{ 
-                            borderRadius: 2, 
+                          sx={{
+                            borderRadius: 2,
                             backgroundColor: "#1e293b",
                             fontWeight: 600,
                             "&:hover": { backgroundColor: "#0f172a" }

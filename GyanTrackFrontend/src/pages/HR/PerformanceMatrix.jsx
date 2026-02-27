@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Box, Typography, Card, CardContent, Grid, Select, MenuItem, FormControl, InputLabel, Paper,
   Avatar, Chip, IconButton, Tooltip as MuiTooltip
@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import FilterListIcon from '@mui/icons-material/FilterList';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import { hrService } from "../../services/hrService";
 
 const mockDepartmentData = [
   { name: "Engineering", avgScore: 82, highest: 96, lowest: 65, growth: 5 },
@@ -17,20 +18,20 @@ const mockDepartmentData = [
 ];
 
 const mockInternData = [
-  { 
-    id: 1, name: "Alex Rivendell", department: "Engineering", 
+  {
+    id: 1, name: "Alex Rivendell", department: "Engineering",
     performance: [
       { test: "Week 1", score: 65 }, { test: "Week 2", score: 72 }, { test: "Week 3", score: 85 }, { test: "Final", score: 92 }
     ]
   },
-  { 
-    id: 2, name: "Samira Ahmed", department: "Engineering", 
+  {
+    id: 2, name: "Samira Ahmed", department: "Engineering",
     performance: [
       { test: "Week 1", score: 80 }, { test: "Week 2", score: 85 }, { test: "Week 3", score: 88 }, { test: "Final", score: 90 }
     ]
   },
-  { 
-    id: 3, name: "Jordan Lee", department: "Design", 
+  {
+    id: 3, name: "Jordan Lee", department: "Design",
     performance: [
       { test: "Week 1", score: 70 }, { test: "Week 2", score: 78 }, { test: "Week 3", score: 85 }, { test: "Final", score: 95 }
     ]
@@ -38,18 +39,48 @@ const mockInternData = [
 ];
 
 const PerformanceMatrix = () => {
+  const [departmentData, setDepartmentData] = useState([]);
+  const [internData, setInternData] = useState(mockInternData);
+  const [loading, setLoading] = useState(true);
+
   const [departmentFilter, setDepartmentFilter] = useState("All");
   const [sortBy, setSortBy] = useState("avgScore");
   const [selectedIntern, setSelectedIntern] = useState(mockInternData[0].id);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // We will fetch performance aggregates. Assuming the API returns a list of departments with metrics.
+        // If not, we fallback to mock data mapped carefully
+        const res = await hrService.getHRDashboardStats();
+        if (res.data && res.data.length > 0) {
+          setDepartmentData(res.data);
+        } else {
+          setDepartmentData(mockDepartmentData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch HR performance matrix:", err);
+        setDepartmentData(mockDepartmentData); // Fallback for UI if API fails
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   // Filter & Sort Department Data
   const processedDeptData = useMemo(() => {
-    let data = [...mockDepartmentData];
+    let data = [...departmentData];
     if (departmentFilter !== "All") {
       data = data.filter(d => d.name === departmentFilter);
     }
-    return data.sort((a, b) => b[sortBy] - a[sortBy]);
-  }, [departmentFilter, sortBy]);
+    // Handle cases where the API properties might differ slightly (e.g. AverageScore vs avgScore)
+    return data.sort((a, b) => {
+      const aVal = a[sortBy] || a[sortBy.toLowerCase()] || a.AverageScore || 0;
+      const bVal = b[sortBy] || b[sortBy.toLowerCase()] || b.AverageScore || 0;
+      return bVal - aVal;
+    });
+  }, [departmentData, departmentFilter, sortBy]);
 
   // Get active intern chart data
   const activeIntern = mockInternData.find(i => i.id === selectedIntern);
@@ -69,12 +100,12 @@ const PerformanceMatrix = () => {
           <FilterListIcon sx={{ color: '#64748b' }} />
           <Typography fontWeight={600} color="#334155">Filters & Sorting</Typography>
         </Box>
-        
+
         <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'white' }}>
           <InputLabel>Department Filter</InputLabel>
           <Select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} label="Department Filter">
             <MenuItem value="All">All Departments</MenuItem>
-            {mockDepartmentData.map(d => <MenuItem key={d.name} value={d.name}>{d.name}</MenuItem>)}
+            {departmentData.map(d => <MenuItem key={d.name || d.departmentName} value={d.name || d.departmentName}>{d.name || d.departmentName}</MenuItem>)}
           </Select>
         </FormControl>
 
@@ -102,8 +133,8 @@ const PerformanceMatrix = () => {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} />
                     <YAxis axisLine={false} tickLine={false} />
-                    <Tooltip 
-                      cursor={{fill: '#f1f5f9'}}
+                    <Tooltip
+                      cursor={{ fill: '#f1f5f9' }}
                       contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                     />
                     <Legend iconType="circle" wrapperStyle={{ paddingTop: 20 }} />
@@ -126,9 +157,9 @@ const PerformanceMatrix = () => {
                 </Typography>
                 <MuiTooltip title="Select Intern">
                   <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <Select 
-                      value={selectedIntern} 
-                      onChange={(e) => setSelectedIntern(e.target.value)} 
+                    <Select
+                      value={selectedIntern}
+                      onChange={(e) => setSelectedIntern(e.target.value)}
                       sx={{ borderRadius: 2, height: 36, fontSize: '0.875rem' }}
                     >
                       {mockInternData.map(i => <MenuItem key={i.id} value={i.id}>{i.name}</MenuItem>)}
@@ -145,7 +176,7 @@ const PerformanceMatrix = () => {
                   <Typography fontWeight={700} color="#1e293b">{activeIntern.name}</Typography>
                   <Box display="flex" gap={1} mt={0.5}>
                     <Chip size="small" label={activeIntern.department} sx={{ fontSize: '0.7rem', height: 20 }} />
-                    <Chip size="small" icon={<TrendingUpIcon fontSize="small"/>} label="Positive Trajectory" color="success" variant="outlined" sx={{ fontSize: '0.7rem', height: 20 }} />
+                    <Chip size="small" icon={<TrendingUpIcon fontSize="small" />} label="Positive Trajectory" color="success" variant="outlined" sx={{ fontSize: '0.7rem', height: 20 }} />
                   </Box>
                 </Box>
               </Box>
@@ -155,14 +186,14 @@ const PerformanceMatrix = () => {
                   <AreaChart data={activeIntern.performance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="test" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                       itemStyle={{ color: '#8b5cf6', fontWeight: 'bold' }}
                     />

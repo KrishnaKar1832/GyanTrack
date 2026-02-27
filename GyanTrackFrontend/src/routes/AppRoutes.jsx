@@ -25,7 +25,7 @@ const AppRoutes = () => {
       <Route
         path="/hr/*"
         element={
-          <ProtectedRoute role="HR">
+          <ProtectedRoute role="Admin">
             <HRRoutes />
           </ProtectedRoute>
         }

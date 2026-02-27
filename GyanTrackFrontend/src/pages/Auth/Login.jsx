@@ -8,6 +8,7 @@ import {
 import { keyframes } from "@emotion/react";
 import { useState, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import { authService } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
 
 const float = keyframes`
@@ -28,14 +29,33 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [hovered, setHovered] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    let role = "Intern";
-    if (email.includes("hr")) role = "HR";
-    if (email.includes("eval")) role = "Evaluator";
+  const handleLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const response = await authService.login({ email, password });
+      const userData = response.data;
 
-    login({ email, role });
-    navigate(`/${role.toLowerCase()}`);
+      // userData should contain { token, userId, email, role, fullName }
+      login(userData);
+
+      // Navigate based on role (Admin -> /hr, Evaluator -> /evaluator, Intern -> /intern)
+      let rolePath = userData.role.toLowerCase();
+      if (rolePath === "admin") rolePath = "hr"; // Frontend uses /hr mapping for Admin
+
+      navigate(`/${rolePath}`);
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Login failed. Please check your credentials and try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,6 +140,12 @@ const Login = () => {
           Sign in to continue to GyanTrack
         </Typography>
 
+        {error && (
+          <Typography color="error" variant="body2" sx={{ mb: 2, background: 'rgba(255,0,0,0.1)', p: 1, borderRadius: 1 }}>
+            {error}
+          </Typography>
+        )}
+
         <TextField
           fullWidth
           label="Email"
@@ -178,8 +204,9 @@ const Login = () => {
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           onClick={handleLogin}
+          disabled={loading}
         >
-          Sign In
+          {loading ? "Signing in..." : "Sign In"}
         </Button>
       </Paper>
     </Box>
