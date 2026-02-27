@@ -30,6 +30,10 @@ export const hrService = {
         api.get("/admin/performance/department", { params: { department: dept, subjectId } }),
     getInternPerformance: (internId) => api.get(`/admin/performance/intern/${internId}`),
 
-    // Dashboard mock - replacing previous single endpoint
-    getHRDashboardStats: () => api.get("/admin/performance/department")
+    // User listings (for dropdowns)
+    getEvaluators: () => api.get("/admin/evaluators"),
+    getInterns: () => api.get("/admin/interns"),
+
+    // Dashboard stats
+    getHRDashboardStats: () => api.get("/admin/performance/department"),
 };

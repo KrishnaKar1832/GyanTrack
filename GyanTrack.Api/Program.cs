@@ -49,10 +49,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5175", "http://localhost:3000") // Common frontend ports
+            policy.WithOrigins(
+                    "http://localhost:5173",
+                    "http://localhost:5174",
+                    "http://localhost:3000")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
-                  .AllowCredentials(); // Often needed for auth tokens
+                  .AllowCredentials();
         });
 });
 
@@ -126,7 +129,15 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<GyanTrackDbContext>();
-    await SeedData.SeedDummyDataAsync(context);
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        await SeedData.SeedDummyDataAsync(context);
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning("Seed data skipped or partially failed: {Message}", ex.Message);
+    }
 }
 
 app.Run();

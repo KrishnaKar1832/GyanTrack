@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using GyanTrack.Api.DTOs.Evaluations;
 using GyanTrack.Api.Services.Evaluations;
 using GyanTrack.Api.Extensions;
+using GyanTrack.Api.Repositories.Users;
 
 namespace GyanTrack.Api.Controllers
 {
@@ -16,11 +17,60 @@ namespace GyanTrack.Api.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IEvaluationService _evaluationService;
+        private readonly IEvaluatorRepository _evaluatorRepo;
+        private readonly IInternRepository _internRepo;
 
-        public AdminController(IEvaluationService evaluationService)
+        public AdminController(
+            IEvaluationService evaluationService,
+            IEvaluatorRepository evaluatorRepo,
+            IInternRepository internRepo)
         {
             _evaluationService = evaluationService;
+            _evaluatorRepo = evaluatorRepo;
+            _internRepo = internRepo;
         }
+
+        #region User Listings
+
+        /// <summary>
+        /// GET: api/admin/evaluators
+        /// List all evaluators for dropdown population
+        /// </summary>
+        [HttpGet("evaluators")]
+        public async Task<ActionResult> GetAllEvaluators()
+        {
+            try
+            {
+                var evaluators = await _evaluatorRepo.GetAllAsync();
+                var result = evaluators.Select(e => new { id = e.EvaluatorID, name = e.FullName, department = e.Department });
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// GET: api/admin/interns
+        /// List all interns for dropdown population
+        /// </summary>
+        [HttpGet("interns")]
+        public async Task<ActionResult> GetAllInterns()
+        {
+            try
+            {
+                var interns = await _internRepo.GetAllAsync();
+                var result = interns.Select(i => new { id = i.InternID, name = i.FullName, department = i.Department, batch = i.Batch });
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        #endregion
 
         #region Subject Management
 
