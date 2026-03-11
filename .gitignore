@@ -1,0 +1,115 @@
+# .NET / C# - Build Outputs
+bin/
+obj/
+*.user
+*.userprefs
+*.sln.iml
+.vs/
+.vscode/
+*.suo
+*.mdb
+*.opendb
+*.VC.db
+*.VC.opendb
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+*.lock.json
+
+# Visual Studio / JetBrains
+.idea/
+.idea_modules/
+out/
+*.sln.iml
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Entity Framework
+*.Designer.cs
+Migrations/*.Designer.cs
+
+# LocalDB / Database
+*.mdf
+*.ldf
+*.ndf
+
+# Build outputs
+*.dll
+*.exe
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+*.swp
+*.swo
+
+# IDE-specific
+.editorconfig
+.flake8
+.pylintrc
+.sublime-workspace
+.sublime-project
+.project
+.settings/
+.classpath
+
+# Environment Variables
+*.env
+*.env.local
+*.env.*.local
+.env
+.env.local
+.env.*.local
+GyanTrackFrontend/.env
+GyanTrackFrontend/.env.local
+GyanTrackFrontend/.env.*.local
+
+# Node.js / Frontend Cache & Modules
+node_modules/
+jspm_packages/
+.npm
+.yarn
+GyanTrackFrontend/node_modules/
+GyanTrackFrontend/dist/
+GyanTrackFrontend/dist-ssr/
+GyanTrackFrontend/coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Test Results
+TestResults/
+.coverage
+.opencover.xml
+coverage.json
+
+# API configuration (Ignoring secrets override, tracking template)
+appsettings.*.json
+!appsettings.Development.json
+!appsettings.json
+
+# Misc folders
+.vscode-test/
+.cache/
+tmp/
+temp/
